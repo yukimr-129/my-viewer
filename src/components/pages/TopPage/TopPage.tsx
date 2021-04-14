@@ -1,4 +1,4 @@
-import React, { VFC } from 'react'
+import React, { memo, VFC } from 'react'
 import { Link } from 'react-router-dom'
 import { DefaultButton } from '../../atoms/button/Button'
 import { SearchInput } from '../../atoms/input/SearchInput'
@@ -7,7 +7,7 @@ import { SearchForm } from '../../organisms/searchform/SearchForm'
 import VideosList from '../../organisms/videoslist/VideosList'
 import VideosListItem from '../../organisms/videoslistItem/VideosListItem'
 
-export const TopPage: VFC = () => {
+export const TopPage: VFC = memo(() => {
     return (
         <>
             <Header>My Viewer</Header>
@@ -15,4 +15,4 @@ export const TopPage: VFC = () => {
             <VideosList/>
         </>
     )
-}
+})
