@@ -1,6 +1,6 @@
 import { atom } from "recoil"
 
-const nextPageToken = atom({
+const nextPageToken = atom<string | undefined>({
     key: 'nextPageToken',
     default: ''
 })

@@ -3,14 +3,14 @@ import React, { ChangeEvent, Dispatch, memo, SetStateAction, useState, VFC } fro
 
 type Props = {
     keyword: string;
-    setKeyword: Dispatch<SetStateAction<string>>;
+    setSearchKeyword: Dispatch<SetStateAction<string>>;
 }
 
 export const SearchInput: VFC<Props> = memo((props) => {
-   const {keyword, setKeyword} = props
+   const {keyword, setSearchKeyword} = props
 
     const SerachSetKeyword = (e: ChangeEvent<HTMLInputElement>) => {
-        setKeyword(e.target.value) 
+        setSearchKeyword(e.target.value) 
     }
 
     return (

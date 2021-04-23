@@ -1,6 +1,6 @@
 import axios from "axios"
 import { useCallback, useState } from "react"
-import { useSetRecoilState } from "recoil"
+import { useRecoilState, useSetRecoilState } from "recoil"
 import youtubeDataState from "../../store/youtubeDataState"
 import nextPageToken from "../../store/nextPageToken"
 import { searchData, videoListData } from "../../types/api/youtubeData"
@@ -28,31 +28,10 @@ type APIsearch = {
 
 export const useYoutubeSearch = () => {
     //set関数呼び出し
-    const setSearchResult = useSetRecoilState(youtubeDataState)
+    const [ searchResultVideo, setSearchResult] = useRecoilState(youtubeDataState)
     const setNextPageToken = useSetRecoilState(nextPageToken)
-    // const [ videoList, setVideoList ] = useState<Array<videoListData>>([])
 
-    //検索結果を取得
-    // const search = (keyword: string) => {
-    //     axios.get<APIsearch>('https://www.googleapis.com/youtube/v3/search',{
-    //         params: {
-    //             part: 'snippet',
-    //             q: '猫',
-    //             maxResults: 5,
-    //             key: process.env.REACT_APP_YOUTUBE_API_KEY
-    //         }
-    //     })
-    //     .then(({data: {items}}) => {
-    //         items.map((item: searchData) => {
-    //             getVideoList(item.id.videoId)
-    //             console.log(item)
-    //         })   
-    //     })
-    //     .catch((e) => {
-    //         console.log(e);
-    //     })
-    // }
-    const search = useCallback(async (keyword: string) => {
+    const search = useCallback(async (keyword: string = '', pageToken: string = '') => {
         try {
            const searchItems = await axios.get<APIsearch>('https://www.googleapis.com/youtube/v3/search',{
                                                             params: {
@@ -60,27 +39,59 @@ export const useYoutubeSearch = () => {
                                                                 q: keyword,
                                                                 maxResults: 5,
                                                                 regionCode: 'JP',
+                                                                pageToken,
                                                                 key: process.env.REACT_APP_YOUTUBE_API_KEY
                                                             }
                                                         })
             
             const {data: {items, nextPageToken}} = searchItems
+                                                    
+            if(pageToken === '') {
+                const videoListresult = await Promise.all(items.filter((item) => item.id.videoId).map(async (videoItem: searchData) => {
+                    const videoList: any = await getVideoList(videoItem.id.videoId)                
+                    return videoList.data.items
+                }))
+    
+                const videoList = videoListresult.map((listitem) => {
+                    for (let i = 0; i < listitem.length; i++) {
+                        return listitem[i];
+                    }
+                })
+                console.log(videoList);
+                
+                //検索結果をstateにセット
+                setSearchResult(videoList)
+                setNextPageToken(nextPageToken)
+            } else {
+                //nextPageTokenを元に動画の続きを取得
+                const videoListresult = await Promise.all(items.filter((item) => item.id.videoId).map(async (videoItem: searchData) => {
+                    const videoList: any = await getVideoList(videoItem.id.videoId)                
+                    return videoList.data.items
+                }))
+    
+                // const videoList = videoListresult.filter((video) => ).map((listitem) => {
+                //     for (let i = 0; i < listitem.length; i++) {
+                //         return listitem[i];
+                //     }
+                // })
+                const videoList = videoListresult.map((listitem) => {
+                    for (let i = 0; i < listitem.length; i++) {
+                        return listitem[i];
+                    }
+                })
 
-            
-            const videoListresult = await Promise.all(items.filter((item) => item.id.videoId).map(async (videoItem: searchData) => {
-                const videoList: any = await getVideoList(videoItem.id.videoId)                
-                return videoList.data.items
-            }))
+                const nextvideo = videoList.filter(({ id }) => {
+                    return !searchResultVideo.find((video) => video.id === id)
+                })
+                console.log(searchResultVideo, nextvideo);
+                
+                const nextVideoList = searchResultVideo.concat(nextvideo)
+                console.log(nextVideoList);
+                
+                setSearchResult(nextVideoList)
+                setNextPageToken(nextPageToken)
 
-            const videoList = videoListresult.map((listitem) => {
-                for (let i = 0; i < listitem.length; i++) {
-                    return listitem[i];
-                }
-            })
-
-            //検索結果をstateにセット
-            setSearchResult(videoList)
-            setNextPageToken(nextPageToken)
+            }
             
         } catch (error) {
             console.log(error);
@@ -96,14 +107,11 @@ export const useYoutubeSearch = () => {
                 params: {
                     id: id,
                     part: 'snippet, statistics',
-                    // regionCode: 'JP',
+                    regionCode: 'JP',
                     key: process.env.REACT_APP_YOUTUBE_API_KEY
                 }
             })
-        console.log(result);
-        
             return result
-
         } catch (error) {
             console.log(error) 
         }
